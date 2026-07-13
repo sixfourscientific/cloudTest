@@ -14,5 +14,25 @@
       "EXTENSIONS": {},
       "GUNZIPPED": false
     }
+  },
+  "SOFTWARE1": {
+    "COMMAND1": {
+      "DATA": {
+        "CONFIG": {
+          "VERSION": [],
+          "LABEL": {
+            "INCLUDE": true,
+            "MODULE": null,
+            "PRE": null,
+            "POST": null,
+            "ALIASES": {}
+          },
+          "ARGS": {
+            "CORE": {},
+            "SWEEP": "/Users/matt/Developer/GitHub/cloudTest/pipeline/inputs/config/SweepInfo_Software1_Command1_Data.tsv"
+          }
+        }
+      }
+    }
   }
 }
