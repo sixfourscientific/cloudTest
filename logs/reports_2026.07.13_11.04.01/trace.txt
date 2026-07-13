@@ -1,3 +1,0 @@
-task_id	hash	native_id	name	status	exit	submit	duration	realtime	%cpu	peak_rss	peak_vmem	rchar	wchar
-2	69/d642ba	2917	Data:Command1Software1:Run (entry2-def)	COMPLETED	0	2026-07-13 11:04:02.427	2.1s	54ms	123.1%	0	0	74.6 KB	208 B
-1	d5/f8fc73	2923	Data:Command1Software1:Run (entry1-def)	COMPLETED	0	2026-07-13 11:04:02.433	2.1s	54ms	123.1%	0	0	74.6 KB	208 B

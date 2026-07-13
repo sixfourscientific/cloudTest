@@ -2,3 +2,5 @@
 archive
 **/launch_*
 **/.nextflow*
+logs
+work
