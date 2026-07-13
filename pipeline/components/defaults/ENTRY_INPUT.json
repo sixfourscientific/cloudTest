@@ -1,0 +1,12 @@
+{
+  "INFO"       : null,
+  "TYPE"       : null,
+  "DETAILED"   : false,
+  "ID_FIELD"   : null,
+  "UNIQUE"     : [],
+  "EXISTS"     : [],
+  "CONTENTS"   : [],
+  "NESTED"     : {},
+  "EXTENSIONS" : {},
+  "GUNZIPPED"  : false
+}

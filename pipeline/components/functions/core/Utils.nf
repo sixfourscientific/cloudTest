@@ -1,0 +1,818 @@
+import java.nio.file.Files
+
+// FUNCTIONS
+
+
+def parseSupplementary ( supplementary, PARAMS ){
+
+    if (supplementary && supplementary instanceof String) {
+
+        supplementary
+            // simplify delimiter
+            .replaceAll(/\s+/, ' ')
+            // seperate supplementary inputs
+            .split(' ')
+            // parse supplementary input
+            .collectEntries { argument -> 
+
+                def (parameter, flag) = argument.split('=')
+
+                PARAMS[(flag)] = parameter
+
+                return } }
+
+    return }
+
+
+
+def parseUrl(url) {
+
+    def urlObj = url.toURL()
+
+    // extract path stem & file
+    def (stemList, fileName) = urlObj
+        .path
+        .tokenize('/')
+        .with { parts -> 
+            return [parts[0..-2], parts.last()] }
+
+    def hostTag = urlObj
+        .host
+        .replace('.','-')
+
+    def stemTag = stemList
+        .join('-')
+
+    // remove final 1 or 2 file extensions
+    def baseName = fileName
+        .replaceAll(/(\.[^.]+){1,2}$/, '')
+
+    def urlList = [
+        hostTag,
+        stemTag,
+        baseName,
+        ]
+
+    return urlList }
+
+
+
+def collapseMap(map, linkList = [], delimiter = '.') {
+    def result = [:]
+
+    map
+        .each { key, value ->
+      
+            def newPath = linkList + key
+      
+            ( value instanceof Map && !value.isEmpty() )
+                ? result.putAll(collapseMap(value, newPath, delimiter))
+                : result.putAt(newPath.join(delimiter), value)
+      
+            }
+
+    return result }
+
+
+
+def collapseParams( map, delimiter = '.' ) {
+
+    def collapsedMap = collapseMap( map, [], delimiter )
+
+    def listedMap = collapsedMap
+
+        .collect{ key, value -> 
+    
+            value = value instanceof Map || value instanceof List || value == null
+                ? 'N/A'
+                : value
+    
+            return [ flag:key, parameter: value ] }
+
+    return listedMap }
+
+
+
+def prepBridge( args ){
+
+    def coreMeta  = args.coreMeta
+    def indexMeta = args.indexMeta
+    def indexMetaNew = [:]
+
+    def basicIndex = args.BASIC
+    def updateIndex = args.UPDATE
+    def interimIndex = args.INTERIM
+
+    def runMeta = [ 
+        ID  : coreMeta.ID,
+        TAG : coreMeta.TAG,
+        ] 
+
+    // new header
+    if ( !updateIndex && !interimIndex ) {
+    
+        def infoMeta = basicIndex 
+            ? [:]
+            : runMeta
+
+        indexMetaNew.putAll( infoMeta + indexMeta ) }
+
+    // update original header
+    else {
+
+        // update original fields as required
+        def fieldMeta = coreMeta.INFO.FIELDS
+
+            .collectEntries { key ->
+                def value = coreMeta[key] // original (id update no longer required)
+                return  [ (key) : value ] }
+
+        def updateMeta = fieldMeta + runMeta
+
+        // original fields including updates
+        if ( !interimIndex ) {
+
+            indexMetaNew.putAll(updateMeta) }
+
+        // original fields including intermediary info
+        else {
+
+            // tag intermediary info
+            def interimMeta = indexMeta
+                .collectEntries{ key, value ->
+                    [ "${key}.${params.intTag}" : value ]}
+
+            indexMetaNew.putAll( updateMeta + interimMeta ) }
+
+        }
+
+    return indexMetaNew }
+
+
+
+def getFileInfo ( path, extensions ){
+
+    def extensionRegex = !extensions 
+        ? '[^.]+' // any extension
+        : extensions.join('|') // extensions list
+
+    def patternRegex = ~"(.*?)\\.(${extensionRegex})(?:\\.gz)?\$"
+
+    def matcherRegex = file(path).getName() =~ patternRegex
+    
+    // check entire string matches
+    assert matcherRegex.matches(): 
+        "Unexpected filename; ${file(path).getName()} =~ $patternRegex "
+    
+    def fileName = matcherRegex[0][1]
+
+    def fileExt =  matcherRegex[0][2]
+    
+    return [fileName, fileExt] }
+
+
+
+def formatArguments (arguments, seperator, indent) {
+
+	def argumentList = arguments
+
+		.collect { flag, parameter -> 
+
+			def argument = ((!parameter && !parameter == 0) || parameter == false) ? ''
+				: (parameter == true) ? flag
+				    : [flag, parameter].join(seperator)
+			
+			return argument }
+		
+		.join(" \\\n${indent}")
+
+	return argumentList }
+
+
+
+def formatTags( CONFIG ){
+
+    // LOOKUP ALIAS
+    def checkAlias = { original, aliasMap -> 
+        
+        def updated = (aliasMap && aliasMap.containsKey(original))
+            ? aliasMap[(original)]
+            : original 
+
+        return updated }
+
+    // module tag (OPTIONAL)
+    def moduleTag = !CONFIG.LABEL.MODULE 
+        ? null
+        : "$CONFIG.LABEL.MODULE"
+
+    // version tag (OPTIONAL)
+    def versionTag = !moduleTag || !CONFIG.VERSION
+        ? null
+        : CONFIG.VERSION.toString().toLowerCase().startsWith("v") 
+            ?  "$CONFIG.VERSION"
+            : "v$CONFIG.VERSION"
+
+    // extra tag (OPTIONAL)
+    def preTag = CONFIG.LABEL.PRE ?: null
+
+    // copy object
+    def settings = CONFIG.ARGS.clone()
+
+    // remove arguments with null flag alias
+    CONFIG.LABEL.ALIASES
+        .findAll{ key, value -> value == null }
+        .keySet()
+        .each { key -> settings.remove(key) }
+
+    // extract relevant argument info
+    def argumentTags = !CONFIG.LABEL.INCLUDE
+
+        // no tag
+        ? [null]
+
+        : !settings
+
+            // default tag
+            ? [checkAlias('DEFAULT', CONFIG.LABEL.ALIASES)] 
+
+            : settings
+
+                .collect{ flag, parameter -> 
+
+                    // reformat flag
+                    def flagTag = checkAlias(flag, CONFIG.LABEL.ALIASES)
+                        .toString()
+                        .replaceFirst('^-+', '')
+                        .toLowerCase()
+
+                    // split parameter as required
+                    def paremeterList = parameter instanceof String
+                        ? parameter.toString().tokenize(',')
+                        : [parameter]
+
+                    // reformat parameter
+                    def parameterTagList = paremeterList
+
+                        .collect{ value -> 
+                            
+                            checkAlias(value, CONFIG.LABEL.ALIASES)
+                                .toString()
+                                .replace(' ','')
+                                .capitalize() }
+
+                    def parameterTag = parameterTagList
+                        .join('')
+
+                    // argument tag (OPTIONAL)
+                    def tag = "${flagTag}${parameterTag}"
+
+                    return tag }
+
+    // collect tags & remove null values
+    def tagList = [
+        moduleTag,
+        versionTag,
+        *argumentTags,
+        preTag,
+        ]
+        .findAll()     
+
+    return tagList }
+
+
+
+def preStage( args ){
+
+    def coreMeta     = args.coreMeta
+    def configMeta   = args.configMeta
+    def tagDelimiter = args.tagDelimiter
+    def tagDefault   = args.tagDefault
+
+    def tagNew = makeTag(
+        tags      : [coreMeta.TAG, *formatTags(configMeta)],
+        delimiter : tagDelimiter,
+        default   : tagDefault,
+        )
+
+    def coreMetaNew = coreMeta + [
+        TAG     : tagNew,
+        STAGING : configMeta,
+        ]
+
+    return coreMetaNew }
+
+
+
+def joinList( object, wrap = '\"', separator = ', ' ) {
+
+    assert object instanceof List,
+        "Unexpected list object; found \"${object.getClass()}\" class"
+
+    def wrapped = object.collect{ item -> "${wrap}${item}${wrap}" }
+
+    def joined = wrapped.size() > 1 
+        ? "${wrapped.init().join(', ')} & ${wrapped.last()}"
+        : wrapped.first()
+
+    return joined
+
+    }
+
+
+/*
+def getNestStructure( Map object, List keys = [] ) {
+
+    assert object.size() == 1 && object.values().every { value -> value instanceof Map },
+        "Unexpected output submap structure; found ${object.size()} levels containing ${joinList(object.values().collect{ value -> value.getClass()})}"
+
+    def entry = object.entrySet().first()
+
+    // recurse if nested suubmap i.e. [ key : [:] ]
+    if (entry.value instanceof Map) {
+
+        // store key
+        keys << entry.key
+
+        // stop before the leaf map (where values are no longer maps)
+        if (entry.value.values().any { value -> value instanceof Map }) {
+
+            getNestStructure(entry.value, keys) 
+            
+            } 
+        
+        }
+
+    return keys }
+
+
+
+def updateOutputs( coreMeta, outputMeta ){
+
+    // extraxt nested keys except leaf submap
+    def nestList = getNestStructure( outputMeta, [] )
+    
+    // check SOFTWARE -> COMMAND -> BRANCH
+    assert nestList.size() == 3, 
+        "Unexpected output map structure; found ${nestList.size()} levels \"${nestList.join(', ')}\", "
+            
+    def (software, command, branch) = nestList
+
+    // initialise OUTPUTS
+    def coreOutputMeta   = coreMeta.OUTPUTS            ?: [:]
+    def coreSoftwareMeta = coreOutputMeta[(software)]  ?: [:]
+    def coreCommandMeta  = coreSoftwareMeta[(command)] ?: [:]
+    def coreBranchMeta   = coreCommandMeta[(branch)]   ?: [:]
+    def coreLeafMeta     = outputMeta[(software)][(command)][(branch)]
+
+    // flatten nested lists
+    def leafMetaNew = coreLeafMeta
+        .collectEntries { key, value ->
+            def valueNew = value instanceof List 
+                ? value.flatten() 
+                : value
+            return [(key): (valueNew)] }
+
+    // update OUTPUTS
+    def branchMetaNew   = coreBranchMeta   + leafMetaNew
+    def commandMetaNew  = coreCommandMeta  + [ (branch) : branchMetaNew ]
+    def softwareMetaNew = coreSoftwareMeta + [ (command) : commandMetaNew ]
+    def outputMetaNew   = coreOutputMeta   + [ (software) : softwareMetaNew ]
+
+    return outputMetaNew }
+*/
+
+
+// TO GO
+def getNestStructure( outputMeta, keyList = []) {
+    
+    // init structure store
+    def structureList = []
+    
+    outputMeta
+
+        // iterate output map keys
+        .each { key, value ->
+
+            // init path store
+            def pathList = keyList + key
+
+            value instanceof Map && !value.isEmpty()
+
+                // recurse if nested submap
+                ? structureList.addAll( getNestStructure(value, pathList) )
+            
+                // store path minus leaf within structure
+                : structureList << pathList[0..-2]
+
+            }
+
+   // remove duplicate paths
+    return structureList.unique() }
+
+
+// TO GO
+def updateNestPath( coreOutputMeta, outputMeta, pathList ) {
+
+    // check SOFTWARE -> COMMAND -> BRANCH
+    assert pathList.size() == 3, 
+        "Unexpected output map structure; found ${pathList.size()} levels \"${pathList.join(', ')}\", "
+
+    def ( software, command, branch ) = pathList
+
+    // initialise path maps
+    def coreSoftwareMeta = coreOutputMeta[(software)]  ?: [:]
+    def coreCommandMeta  = coreSoftwareMeta[(command)] ?: [:]
+    def coreBranchMeta   = coreCommandMeta[(branch)]   ?: [:]
+    def coreLeafMeta     = outputMeta[(software)][(command)][(branch)]
+
+    // flatten nested leaf lists
+    def leafMetaNew = coreLeafMeta
+        .collectEntries { key, value ->
+            def valueNew = value instanceof List 
+                ? value.flatten() 
+                : value
+            return [(key): (valueNew)] }
+
+    // update OUTPUTS
+    def branchMetaNew   = coreBranchMeta   + leafMetaNew
+    def commandMetaNew  = coreCommandMeta  + [ (branch) : branchMetaNew ]
+    def softwareMetaNew = coreSoftwareMeta + [ (command) : commandMetaNew ]
+    def outputMetaNew   = coreOutputMeta   + [ (software) : softwareMetaNew ]
+
+    return outputMetaNew }
+
+
+
+def updateMap( coreOutputMeta, pathList, leafObj ) {
+
+    def ( software, command, branch, type ) = pathList
+
+    // check SOFTWARE -> COMMAND -> BRANCH
+    assert software && command && ((branch && type) || (branch && !type)), 
+        "Unexpected output map structure; found ${pathList.size()} levels \"${pathList.join(', ')}\", "
+
+    // conform leaf object within type map as required
+    def coreLeafMeta = type 
+        ? [ (type) : leafObj ] 
+        : leafObj
+
+    // initialise other sub maps
+    def coreSoftwareMeta = coreOutputMeta[(software)]  ?: [:]
+    def coreCommandMeta  = coreSoftwareMeta[(command)] ?: [:]
+    def coreBranchMeta   = coreCommandMeta[(branch)]   ?: [:]
+
+    // flatten nested leaf lists
+    def leafMetaNew = coreLeafMeta
+        .collectEntries { key, value ->
+            def valueNew = value instanceof List 
+                ? value.flatten() 
+                : value
+            return [(key): (valueNew)] }
+
+    // update OUTPUTS
+    def branchMetaNew   = coreBranchMeta   + leafMetaNew
+    def commandMetaNew  = coreCommandMeta  + [ (branch) : branchMetaNew ]
+    def softwareMetaNew = coreSoftwareMeta + [ (command) : commandMetaNew ]
+    def outputMetaNew   = coreOutputMeta   + [ (software) : softwareMetaNew ]
+
+    return outputMetaNew }
+
+
+
+def packMaps( infoList ){
+
+    def subMaps = infoList
+        .collect{ subPath, value ->
+            subPath
+                .reverse()
+                .inject( value ) { acc, key -> return [(key): acc] } }
+
+    return subMaps }
+
+
+// TO GO
+def updateOutputs( coreMeta, outputMeta ){
+
+    // extract nested keys except leaf submap
+    def structureList = getNestStructure( outputMeta, [] )
+
+    // initialise OUTPUTS
+    def coreOutputs = coreMeta.OUTPUTS ?: [:]
+
+    structureList
+        
+        // iterate paths
+        .each{ pathList ->
+            
+            // update individual paths
+            coreOutputs = updateNestPath(coreOutputs, outputMeta, pathList ) }
+    
+    return coreOutputs }
+
+
+
+def updateOutputsNEW( coreMeta, updateList ){
+
+    // initialise OUTPUTS
+    def outputMetaUpdate = coreMeta.OUTPUTS ?: [:]
+
+    // [ [SOFTWARE, COMMAND, BRANCH, TYPE], output ], ... ]
+    updateList 
+
+        // iterate submaps
+        .each{ pathList, leafObj ->
+
+            // update individual submaps
+            outputMetaUpdate = updateMap( outputMetaUpdate, pathList, leafObj ) }
+    
+    return outputMetaUpdate }
+
+
+
+
+def viewMeta( mapObj, entryID = null, linkList = [], level = 0 ){
+    
+    assert mapObj instanceof Map:
+        "No map object found |$mapObj|"
+
+    def seperator = ' ----------'
+    
+    // assign random ID if absent
+    entryID = entryID ?: UUID.randomUUID().toString().toUpperCase().take(6)
+        
+    if ( level.equals(0) ) {  println("// ENTRY: $entryID\n$seperator") }
+
+    mapObj
+        .each{ key, value ->
+
+            def newPath = linkList + key
+
+            // recurse if nested submap 
+            if (value instanceof Map) { viewMeta( value, entryID, newPath, level+1 ) }
+
+            else {
+                
+                // conform list as required
+                def valueList = value instanceof List
+                    ?  value
+                    : [value]
+
+                println( " | ${newPath.join(' > ')}: (${valueList.size()})" )
+                valueList
+                    .each{ leaf -> 
+
+                        def info = leaf
+
+                        // extract basename & hash if process output
+                        if (leaf instanceof Path){
+
+                            // split path into segments
+                            def segmentList = leaf.toString().replace('\\', '/').split('/') as List
+                            
+                            // get "work" segment index
+                            def workIndex = segmentList.indexOf('work')
+
+                            // get hash segments
+                            def hashList = workIndex >= 0 && segmentList.size() > workIndex+2
+                                ? segmentList[workIndex+1 .. workIndex+2]
+                                : null
+                            
+                            info = "\'${leaf.getFileName()}\'; ${hashList.join('/')}"
+                            
+                            }
+
+                        println("\t- $info") 
+                        
+                        }
+                
+                println("$seperator")   
+                }
+
+            }
+
+    if ( level.equals(0) ) {  println("//\n\n") }
+
+    return } 
+
+
+
+def postStage( args ){
+
+    def coreMeta     = args.coreMeta
+    def updateList   = args.updateList
+    def tagDelimiter = args.tagDelimiter
+    def tagDefault   = args.tagDefault
+
+    def tagNew = makeTag(
+        tags      : [coreMeta.TAG, coreMeta.STAGING.LABEL.POST],
+        delimiter : tagDelimiter,
+        default   : tagDefault,
+        )
+
+    def outputMetaNew = updateOutputsNEW(coreMeta, updateList)
+    
+    def coreMetaNew = coreMeta + [
+        TAG     : tagNew,
+        STAGING : null,
+        OUTPUTS : outputMetaNew,
+        ] 
+
+    return coreMetaNew }
+
+
+
+def splitOutputs( args ) {
+
+    def coreMeta = args.coreMeta
+    def pathList = args.pathList
+    def splitTag = args.splitTag
+    def delimiter = args.delimiter
+    def index     = args.index
+    
+    // extract grouped values via sub path 
+    def pathValues = pathList
+    
+        .inject( coreMeta.OUTPUTS ) { acc, key -> acc[key] }
+
+    // conform single batches to list
+    def valueList = pathValues instanceof List
+        ?   pathValues
+        : [ pathValues ]
+    
+    // repack individual values into sub maps
+    def splitMetaList = valueList
+
+        .sort{ first, second -> first <=> second}
+
+        .withIndex()
+
+        .collect { output, idx ->
+
+            def idxTag = index ? idx+1 : null
+
+            def tagNew = makeTag(
+                tags      : [coreMeta.TAG, splitTag, idxTag],
+                delimiter : delimiter,
+                default   : null,
+                )
+
+            def updateList = [
+                [ pathList, output ],
+                ]
+
+            def outputMetaNew = updateOutputsNEW(coreMeta, updateList)
+
+            def splitMeta = coreMeta + [
+                TAG     : tagNew,
+                OUTPUTS : outputMetaNew,
+                ]
+
+            return splitMeta }
+
+    return splitMetaList }
+
+
+
+def getGroupKey( groupTag, groupPrefix = null ){
+
+    def groupKey = [
+        groupPrefix,
+        groupTag,
+        ]
+        .findAll() 
+        .join('.')
+
+    return groupKey }
+
+
+
+def groupOutputs( coreMeta, outputMeta, groupKey ){
+
+    def outputMetaNew = updateOutputs(coreMeta, outputMeta)
+    
+    def coreMetaNew = coreMeta + [
+        name    : groupKey,
+        TAG     : groupKey,
+        OUTPUTS : outputMetaNew,
+        ] 
+
+    return coreMetaNew }
+
+
+
+def flattenMap( mapObj ) {
+
+    def flatMap = mapObj.collectEntries { key, value ->
+
+        value instanceof Map 
+            // recurse if nested submap
+            ? flattenMap(value).collectEntries{ subKey, subValue -> [ ("${key}_${subKey}"): subValue ] }
+            // return flattened submap path
+            : [ (key) : value ]
+        }
+
+    return flatMap }
+
+
+
+def getSubMap( mapObj, pathList ){
+
+    def subMap = [:]
+
+    // validate nested structure
+    pathList.each { subPath ->
+
+        def targetValue = subPath.inject(mapObj) { accumulator, key ->
+
+            // Check submap parent available within layer (will fail anyway e.g. cannot get property 'KEY' on null object)
+            if (accumulator == null) {
+                throw new Exception("Subpath not found; nested parent missing for key \"$key\"") }
+
+            // 2. Check if the specific key exists in the current container
+            if (!(accumulator instanceof Map) || !accumulator.containsKey(key)) {
+                throw new Exception("Subpath not found; key \"$key\" missing in nested parent (${accumulator instanceof Map ? accumulator.keySet() : 'not a map'})") }
+            
+            return accumulator."$key" }
+
+        // store within submap
+        def current = subMap
+
+        subPath.eachWithIndex { key, idx ->
+
+            // create nested path (as required)
+            if (idx != subPath.size() - 1) {
+
+                current[key] = current[key] ?: [:]
+
+                current = current[key] }
+
+            // store leaf
+            else {
+
+                current[key] = targetValue } 
+            
+            }
+
+        }
+
+    return subMap }
+
+
+
+def formatBasepairs (value) {
+
+    // default
+    def unit = 'bp'
+
+    // gb
+    if (value >= 10**9) {
+        unit = 'g'
+        value = value / 10**9 }
+    
+    // mb
+    else if (value >= 10**6) {
+        unit = 'm'
+        value = value / 10**6 }
+    
+    // kb
+    //else (value >= 10*3) {
+    //    unit = 'k'
+    //    value = value / 10**3 }
+
+    return "$value$unit" }
+
+def makeTag( args ){
+    
+    def tagList    = args.tags
+    def delimiter  = args.delimiter ?: '.'
+    def tagDefault = args.default   ?: null
+
+    def tagNew = tagList
+        // remove null
+        .findAll()
+        // join tags
+        .join(delimiter)
+
+    def tagFinal = tagNew ?: tagDefault
+
+    return tagFinal }
+
+
+
+def makeComplement(originalSeq) { // , reverse
+
+    def complementMap = [ 
+        A:'T', T:'A', G:'C', C:'G', U:'A', N:'N',
+        S:'S', W:'W', K:'M', M:'K', Y:'R', R:'Y', 
+        B:'V', V:'B', D:'H', H:'D', 
+        ]
+
+    def complementSeq = originalSeq
+        .toUpperCase()
+        .collect { base -> complementMap[ base ] ?: 'X' }
+        .join()
+    
+    def modifiedSeq = complementSeq // !reverse ? complementSeq : complementSeq.reverse()
+
+    return modifiedSeq }
