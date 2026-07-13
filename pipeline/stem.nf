@@ -41,6 +41,10 @@ include {
     SUBWORKFLOW as Data;
     } from "${params.importMap.subworkflows}/branches/BRANCH_Data"
 
+include {
+    SUBWORKFLOW as Paths;
+    } from "${params.importMap.subworkflows}/branches/BRANCH_Paths"
+
 ////BRANCH_IMPORT////
 
 
@@ -55,6 +59,8 @@ EXECUTE  = params.execute.split(',')
 RUN_ALL  = EXECUTE.contains('all')
 
 RUN_DATA = RUN_ALL ?: EXECUTE.contains('data')
+
+RUN_PATHS = RUN_ALL ?: EXECUTE.contains('paths')
 
 ////BRANCH_FILTER////
 
@@ -93,6 +99,8 @@ workflow {
 
         Data( Parameters, Inputs | filter { RUN_DATA }  )
 
+        Paths( Parameters, Inputs | filter { RUN_PATHS }  )
+
         ////BRANCH_RUN////
 
 
@@ -103,6 +111,20 @@ workflow {
     publish: 
     
         Data = Data.out.Main.map{ coreMeta -> 
+        
+            def indexMeta = [:]
+            
+            def indexMetaNew = prepBridge( 
+                coreMeta  : coreMeta, 
+                indexMeta : indexMeta, 
+                BASIC     : false, 
+                UPDATE    : false, 
+                INTERIM   : false,
+                )      
+            
+            return indexMetaNew }
+
+        Paths = Paths.out.Main.map{ coreMeta -> 
         
             def indexMeta = [:]
             
@@ -132,6 +154,20 @@ output {
                 return "data/$indexMeta.ID/$indexMeta.TAG" }
             index {
                 path   'bridge-data.csv'
+                header true
+                sep    '\t'
+                }
+            }
+
+        Paths { 
+            enabled      false
+            mode         'copy'
+            overwrite    'standard'
+            ignoreErrors false
+            path { indexMeta -> 
+                return "paths/$indexMeta.ID/$indexMeta.TAG" }
+            index {
+                path   'bridge-paths.csv'
                 header true
                 sep    '\t'
                 }
