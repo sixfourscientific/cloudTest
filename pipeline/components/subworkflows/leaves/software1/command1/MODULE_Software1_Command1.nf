@@ -49,7 +49,7 @@ process MODULE {
     input:
 
         tuple   val  (CoreMeta),
-                path (INPUT),
+                val  (INPUT),
                 path (OPTIONAL),
                 val  (Arguments)
 
@@ -64,13 +64,11 @@ process MODULE {
 
     script:
 
-        println(">>TASK>> $task.process $task.tag; ATTEMPT: $task.attempt | CPUS: $task.cpus (max: $task.resourceLimits.cpus) | MEMORY: $task.memory (max: $task.resourceLimits.memory) | TIME: $task.time (max: $task.resourceLimits.time) | VERSION: $task.ext.version | EXEC: $task.ext.executable\n")
-
         """
 
         mkdir -p subDir
-        echo 'TEST' > OUTPUT1.txt
-        echo 'TEST' > subDir/OUTPUT2.txt
+        echo 'DATA: $INPUT' > OUTPUT1.txt
+        echo 'DATA: $INPUT' > subDir/OUTPUT2.txt
 
         """
 

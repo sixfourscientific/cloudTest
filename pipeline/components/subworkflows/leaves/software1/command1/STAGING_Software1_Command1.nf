@@ -51,7 +51,7 @@ workflow STAGING {
 
                     return [
                         coreMeta,
-                        coreMeta.path,
+                        coreMeta.name,
                         optionalFile,
                         coreMeta.STAGING.ARGS,
                         ] }
