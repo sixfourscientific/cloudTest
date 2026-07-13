@@ -34,5 +34,25 @@
         }
       }
     }
+  },
+  "SOFTWARE2": {
+    "COMMAND2": {
+      "PATHS": {
+        "CONFIG": {
+          "VERSION": [],
+          "LABEL": {
+            "INCLUDE": true,
+            "MODULE": null,
+            "PRE": null,
+            "POST": null,
+            "ALIASES": {}
+          },
+          "ARGS": {
+            "CORE": {},
+            "SWEEP": "/Users/matt/Developer/GitHub/cloudTest/pipeline/inputs/config/SweepInfo_Software2_Command2_Paths.tsv"
+          }
+        }
+      }
+    }
   }
 }
