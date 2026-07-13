@@ -37,6 +37,10 @@ include {
     Info_Parse as ParseInfo;
     } from "${params.importMap.subworkflows}/core/Info_Parse"
 
+include {
+    SUBWORKFLOW as Data;
+    } from "${params.importMap.subworkflows}/branches/BRANCH_Data"
+
 ////BRANCH_IMPORT////
 
 
@@ -49,6 +53,8 @@ Parameters = params
 EXECUTE  = params.execute.split(',')
 
 RUN_ALL  = EXECUTE.contains('all')
+
+RUN_DATA = RUN_ALL ?: EXECUTE.contains('data')
 
 ////BRANCH_FILTER////
 
@@ -85,6 +91,8 @@ workflow {
         
         // BRANCH( Inputs|BRANCH.out.Main)
 
+        Data( Parameters, Inputs | filter { RUN_DATA }  )
+
         ////BRANCH_RUN////
 
 
@@ -94,12 +102,40 @@ workflow {
 
     publish: 
     
+        Data = Data.out.Main.map{ coreMeta -> 
+        
+            def indexMeta = [:]
+            
+            def indexMetaNew = prepBridge( 
+                coreMeta  : coreMeta, 
+                indexMeta : indexMeta, 
+                BASIC     : false, 
+                UPDATE    : false, 
+                INTERIM   : false,
+                )      
+            
+            return indexMetaNew }
+
         ////BRANCH_PUBLISH////
 
     }
 
 
 output {
+
+        Data { 
+            enabled      false
+            mode         'copy'
+            overwrite    'standard'
+            ignoreErrors false
+            path { indexMeta -> 
+                return "data/$indexMeta.ID/$indexMeta.TAG" }
+            index {
+                path   'bridge-data.csv'
+                header true
+                sep    '\t'
+                }
+            }
 
         ////BRANCH_OUTPUT////
 
