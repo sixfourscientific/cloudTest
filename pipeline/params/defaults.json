@@ -29,7 +29,7 @@
           },
           "ARGS": {
             "CORE": {},
-            "SWEEP": "/Users/matt/Developer/GitHub/cloudTest/pipeline/inputs/config/SweepInfo_Software1_Command1_Data.tsv"
+            "SWEEP": "cloudTest/pipeline/inputs/config/SweepInfo_Software1_Command1_Data.tsv"
           }
         }
       }
