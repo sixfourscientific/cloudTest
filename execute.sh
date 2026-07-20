@@ -9,5 +9,5 @@ nextflow \
     -profile login \
     -params-file pipeline/params/defaults.json \
     --execute all \
-    --inputs pipeline/inputs/test/SampleInfoTestMount.tsv \
+    --inputs pipeline/inputs/test/SampleInfoTestS3.tsv \
     --supplementary ''
