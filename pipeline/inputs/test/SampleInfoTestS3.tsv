@@ -1,0 +1,3 @@
+name	group	type	path
+sample1	main	s3	/cloudTest/pipeline/inputs/test/data/test1.fa
+sample2	main	s3	/cloudTest/pipeline/inputs/test/data/test2.fa
