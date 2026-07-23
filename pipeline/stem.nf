@@ -97,6 +97,8 @@ workflow {
         
         // BRANCH( Inputs|BRANCH.out.Main)
 
+        Inputs.view{ it -> ">>>> $it\n"}
+        
         Data( Parameters, Inputs | filter { RUN_DATA }  )
 
         Paths( Parameters, Inputs | filter { RUN_PATHS }  )

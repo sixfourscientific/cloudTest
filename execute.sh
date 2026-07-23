@@ -6,8 +6,8 @@ nextflow \
     -C pipeline/nextflow.config \
     run pipeline/stem.nf \
     -latest \
-    -profile awss3 \
+    -profile aws_batch \
     -params-file pipeline/params/defaults.json \
-    --execute all \
+    --execute paths \
     --inputs pipeline/inputs/test/SampleInfoTestS3.tsv \
     --supplementary ''
