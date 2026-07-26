@@ -69,7 +69,7 @@
           },
           "ARGS": {
             "CORE": {},
-            "SWEEP": "/Users/matt/Developer/GitHub/cloudTest/pipeline/inputs/config/SweepInfo_Seqkit_Seq_Modify.tsv"
+            "SWEEP": "pipeline/inputs/config/SweepInfo_Seqkit_Seq_Modify.tsv"
           }
         }
       }
