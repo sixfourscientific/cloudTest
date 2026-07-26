@@ -54,5 +54,25 @@
         }
       }
     }
+  },
+  "SEQKIT": {
+    "SEQ": {
+      "MODIFY": {
+        "CONFIG": {
+          "VERSION": [],
+          "LABEL": {
+            "INCLUDE": true,
+            "MODULE": null,
+            "PRE": null,
+            "POST": null,
+            "ALIASES": {}
+          },
+          "ARGS": {
+            "CORE": {},
+            "SWEEP": "/Users/matt/Developer/GitHub/cloudTest/pipeline/inputs/config/SweepInfo_Seqkit_Seq_Modify.tsv"
+          }
+        }
+      }
+    }
   }
 }
