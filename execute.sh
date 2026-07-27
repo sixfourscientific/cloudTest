@@ -8,6 +8,6 @@ nextflow \
     -latest \
     -profile local \
     -params-file pipeline/params/defaults.json \
-    --execute data \
+    --execute all \
     --inputs pipeline/inputs/test/SampleInfoTestS3.tsv \
     --supplementary ''
