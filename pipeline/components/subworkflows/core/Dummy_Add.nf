@@ -1,10 +1,6 @@
 
 // IMPORT
 
-include { 
-    parseInfo as parseInfo;
-    } from "$params.importMap.functions/core/Files"
-
 workflow Dummy_Add {
 
     take: 
