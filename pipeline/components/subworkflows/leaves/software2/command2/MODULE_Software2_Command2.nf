@@ -39,7 +39,7 @@ process MODULE {
 
         outFile: { 
 
-            def outFile = "${CoreMeta.name}.seqs.fa"
+            def outFile = "${CoreMeta.name}.head.fa"
 
             return outFile }
 

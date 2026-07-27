@@ -66,8 +66,6 @@ RUN_DATA = RUN_ALL ?: EXECUTE.contains('data')
 
 RUN_PATHS = RUN_ALL ?: EXECUTE.contains('paths')
 
-RUN_MODIFY = RUN_ALL ?: EXECUTE.contains('modify')
-
 ////BRANCH_FILTER////
 
 
@@ -102,14 +100,12 @@ workflow {
         println('RUNNING BRANCHES...')
         
         // BRANCH( Inputs|BRANCH.out.Main)
-
-        Inputs.view{ it -> ">>>> $it\n"}
         
         Data( Parameters, Inputs | filter { RUN_DATA }  )
 
         Paths( Parameters, Inputs | filter { RUN_PATHS }  )
 
-        Modify( Parameters, Inputs | filter { RUN_MODIFY }  )
+        Modify( Parameters, Paths.out.Main )
 
         ////BRANCH_RUN////
 
