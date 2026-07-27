@@ -37,6 +37,10 @@ include {
     Info_Parse as ParseInfo;
     } from "${params.importMap.subworkflows}/core/Info_Parse"
 
+include { 
+    Dummy_Add as AddDummy;
+    } from "${params.importMap.subworkflows}/core/Dummy_Add"
+
 include {
     SUBWORKFLOW as Data;
     } from "${params.importMap.subworkflows}/branches/BRANCH_Data"
@@ -83,18 +87,10 @@ workflow {
             DETAILED : true,
             ]
 
-        def OptionalFile = Channel.from('').collectFile(name:'optional.dummy')
+        Inputs = ParseInfo( InputMeta ) 
+        
+        Inputs = AddDummy(Inputs, [ dummy : 'optional.dummy' ])
 
-        Inputs = ParseInfo( InputMeta ) | combine ( OptionalFile)
-
-            | map { coreMeta, dummyPath ->
-                
-                def coreMetaNew = coreMeta + [
-                    dummyFile : dummyPath,
-                    ]
-                
-                return coreMetaNew }
-    
         // SUPPLEMENTARY
 
         def SUPPLEMENTARYMeta = [
