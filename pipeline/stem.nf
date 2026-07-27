@@ -83,8 +83,18 @@ workflow {
             DETAILED : true,
             ]
 
-        Inputs = ParseInfo( InputMeta )
+        def OptionalFile = Channel.from('').collectFile(name:'optional.dummy')
 
+        Inputs = ParseInfo( InputMeta ) | combine ( OptionalFile)
+
+            | map { coreMeta, dummyPath ->
+                
+                def coreMetaNew = coreMeta + [
+                    dummyFile : dummyPath,
+                    ]
+                
+                return coreMetaNew }
+    
         // SUPPLEMENTARY
 
         def SUPPLEMENTARYMeta = [
