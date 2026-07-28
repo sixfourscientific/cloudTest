@@ -158,10 +158,18 @@ def parseInfo( args ){
     if (!infoPath){ println("WARNING ~ No info file.") }
 
     else {
+        
+        // specify path to parse
+        def parsePath = infoPath
 
+        if (!file(infoPath).exists()) {
+            println("WARNING ~ Missing info file - trying as projectDir subdirectory; $infoPath")
+            parsePath = "${workflow.projectDir}/${infoPath}"
+            }
+        
         // import input file info
         def inputFile = file( 
-            infoPath, 
+            parsePath, 
             checkIfExists : true,
             type          : 'file', )
 
@@ -174,7 +182,7 @@ def parseInfo( args ){
         println "Checking ${inputFile.getBaseName()}..."
 
         // file empty
-        if ( file(infoPath).countLines() == 0){ println("WARNING ~ Empty info file.") }
+        if ( file(parsePath).countLines() == 0){ println("WARNING ~ Empty info file.") }
 
         // file contents 
         else {

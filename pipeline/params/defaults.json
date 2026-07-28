@@ -29,7 +29,7 @@
           },
           "ARGS": {
             "CORE": {},
-            "SWEEP": "pipeline/inputs/config/SweepInfo_Software1_Command1_Data.tsv"
+            "SWEEP": "inputs/config/SweepInfo_Software1_Command1_Data.tsv"
           }
         }
       }
@@ -49,7 +49,7 @@
           },
           "ARGS": {
             "CORE": {},
-            "SWEEP": "pipeline/inputs/config/SweepInfo_Software2_Command2_Paths.tsv"
+            "SWEEP": "inputs/config/SweepInfo_Software2_Command2_Paths.tsv"
           }
         }
       }
@@ -69,7 +69,7 @@
           },
           "ARGS": {
             "CORE": {},
-            "SWEEP": "pipeline/inputs/config/SweepInfo_Seqkit_Seq_Modify.tsv"
+            "SWEEP": "inputs/config/SweepInfo_Seqkit_Seq_Modify.tsv"
           }
         }
       }
