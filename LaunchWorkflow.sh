@@ -6,7 +6,7 @@
 showHelp() {
 
 cat << EOF  
-Usage: $(basename $LAUNCHER) -s <system> -p <parameters> -i <inputs> -x <branch> [-r <launch_directory> -a <archive_directory> -c -t -q SUPPLEMENTARY=NAME]
+Usage: $(basename $SCRIPT) -s <system> -p <parameters> -i <inputs> -x <branch> [-w <workDir> -r <launchDir> -a <archiveDir> -c -t -q SUPPLEMENTARY=NAME]
 
 -h     Display help.
 
@@ -18,7 +18,9 @@ Usage: $(basename $LAUNCHER) -s <system> -p <parameters> -i <inputs> -x <branch>
 
 -x     Specify workflow branches to execute
 
--r     Specify previous directory to resume pipeline from
+-w     Specify work directory
+
+-r     Specify previous launch directory to resume
 
 -c     Clean up cache and work directories
 
@@ -62,7 +64,7 @@ BRANCHES="none"
 INPUTS='none'
 ARCHIVE="$REPO_DIR/archive"
 
-while getopts ':hs:p:i:x:a:r:ct' OPT; do
+while getopts ':hs:p:i:x:w:a:r:ct' OPT; do
 
     case "$OPT" in
 
@@ -75,6 +77,8 @@ while getopts ':hs:p:i:x:a:r:ct' OPT; do
         i) INPUTS="$OPTARG" ;;
 
         x) BRANCHES="$OPTARG" ;;
+
+        w) WORK_DIR="$OPTARG" ;;
 
         a) ARCHIVE="$OPTARG" ;;
 
@@ -110,14 +114,14 @@ fi
 
 # SPECIFY PIPELINE STRUCTURE
 
-LAUNCHER=$(readlink -f $0)
+SCRIPT=$(readlink -f $0)
 
-WORKDIR=$(dirname $LAUNCHER)
+SCRIPT_DIR=$(dirname $SCRIPT)
 
 
 if [ -z "$ARCHIVE" ]; then
 
-    ARCHIVE="$WORKDIR"
+    ARCHIVE="$SCRIPT_DIR"
 
 else 
     
@@ -144,13 +148,13 @@ else
 
 fi
 
-PIPEDIR="$WORKDIR/pipeline"
+PROJECT_DIR="$SCRIPT_DIR/pipeline"
 
-WORKFLOW="$PIPEDIR/stem.nf"
+WORKFLOW="$PROJECT_DIR/stem.nf"
 
-CONFIG="$PIPEDIR/nextflow.config"
+CONFIG="$PROJECT_DIR/nextflow.config"
 
-PARAMETER_DIR="$PIPEDIR/params"
+PARAMETER_DIR="$PROJECT_DIR/params"
 
 
 # CHECK SYSTEM
@@ -181,8 +185,9 @@ fi
 INPUTS=$(readlink -f "$INPUTS")
 
 if [ ! -f "$INPUTS" ]; then
+
     showHelp "Error ~ Input not found: Check input file path"
-    
+
 fi
 
 SUPPLEMENTARY=''
@@ -212,17 +217,25 @@ if [ $TEST ]; then
 
 fi
 
+# WORK DIRECTORY
+if [ $WORK_DIR ]; then
+
+    WORK="-work-dir $WORK_DIR"
+
+fi
+
 
 # CHECK PREVIOUS LAUNCH
 
 # specify launch directory
 DIR2START="launch_${SYSTEM}_${PARAMETERS}"
 
-#NF_LAUNCH_DIR_NEW="$WORKDIR/$DIR2START"
+#NF_LAUNCH_DIR_NEW="$ARCHIVE/$DIR2START"
 NF_LAUNCH_DIR_NEW="$ARCHIVE/$DIR2START"
 
-#NF_LAUNCH_DIR_OLD="$WORKDIR/$DIR2RESUME"
+#NF_LAUNCH_DIR_OLD="$ARCHIVE/$DIR2RESUME"
 NF_LAUNCH_DIR_OLD="$ARCHIVE/$DIR2RESUME"
+
 
 if [ -z $DIR2RESUME ]; then
 
@@ -234,13 +247,22 @@ else
 
     if [ ! -d $NF_LAUNCH_DIR_OLD ]; then # previous launch directory not found
 
-        showHelp "Error ~ Directory not found: Check working directory for available options; $WORKDIR"
+        showHelp "Error ~ launchDir not found: Check archive for available options; $ARCHIVE"
             
     elif [[ ! "$NF_LAUNCH_DIR_OLD" == ${NF_LAUNCH_DIR_NEW}_* ]]; then # previous launch directory format unexpected
+        
         echo "- $NF_LAUNCH_DIR_NEW"
         echo "-- $NF_LAUNCH_DIR_OLD"
-        showHelp "Error ~ Directory format unexpected: Check prefix matches \"$(basename $NF_LAUNCH_DIR_NEW)\"; $NF_LAUNCH_DIR_OLD"
-        
+        showHelp "Error ~ launchDir format unexpected: Check prefix matches \"$(basename $NF_LAUNCH_DIR_NEW)\"; $NF_LAUNCH_DIR_OLD"
+
+    elif [[ ! "$SYSTEM" =~ ^(aws_batch|cloud_other)$ && ! -d "$NF_LAUNCH_DIR_OLD/work" && -z "$WORK_DIR" ]]; then
+
+        showHelp "Error ~ launchDir work subdirectory not found; $NF_LAUNCH_DIR_OLD"
+
+    elif [[ ! "$SYSTEM" =~ ^(aws_batch|cloud_other)$ && ! -d "$NF_LAUNCH_DIR_OLD/work" && ! -d "$WORK_DIR" ]]; then
+
+        showHelp "Error ~ workDir not found; $WORK_DIR"
+
     else
     
         NF_LAUNCH_SUBDIR=$NF_LAUNCH_DIR_OLD # specify relevant launch directory
@@ -263,6 +285,7 @@ IFS='' read -r -d '' LAUNCH_COMMAND << EOF
     nextflow \\
         -C $CONFIG \\
         run $WORKFLOW \\
+        $WORK \\
         $RESUME \\
         $STUB \\
         $PREVIEW \\
@@ -308,8 +331,8 @@ else # Graphviz installed & DAG found
 
     exec "dot -Tpdf $DAG -O" # execute graphviz
     
-    exec "cp ${DAG}.pdf $WORKDIR/dag_latest.pdf" # publish latest dag
-#    exec "cp $DAG $WORKDIR/dag_latest.html" # publish latest dag
+    exec "cp ${DAG}.pdf $SCRIPT_DIR/dag_latest.pdf" # publish latest dag
+#    exec "cp $DAG $SCRIPT_DIR/dag_latest.html" # publish latest dag
 
 fi # checks; plot
 
