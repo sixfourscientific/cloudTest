@@ -132,13 +132,15 @@ workflow {
                 BASIC     : false, 
                 UPDATE    : false, 
                 INTERIM   : false,
-                )      
+                )
             
             return indexMetaNew }
 
         Paths = Paths.out.Main.map{ coreMeta -> 
         
-            def indexMeta = [:]
+            def indexMeta = [
+                'head': coreMeta.OUTPUTS.SOFTWARE2.COMMAND2.PATHS.main,
+                ]
             
             def indexMetaNew = prepBridge( 
                 coreMeta  : coreMeta, 
@@ -186,7 +188,7 @@ output {
             }
 
         Paths { 
-            enabled      false
+            enabled      true
             mode         'copy'
             overwrite    'standard'
             ignoreErrors false

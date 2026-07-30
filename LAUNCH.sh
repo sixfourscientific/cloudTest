@@ -7,5 +7,3 @@ $REPO_DIR/LaunchWorkflow.sh \
 	-p defaults \
 	-x all \
 	-i $REPO_DIR/pipeline/inputs/test/SampleInfoTestLocal.tsv $@
-
-

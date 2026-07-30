@@ -6,7 +6,7 @@
 showHelp() {
 
 cat << EOF  
-Usage: $(basename $SCRIPT) -s <system> -p <parameters> -i <inputs> -x <branch> [-w <workDir> -r <launchDir> -a <archiveDir> -c -t -q SUPPLEMENTARY=NAME]
+Usage: $(basename $SCRIPT) -s <system> -p <parameters> -i <inputs> -x <branch> [-w <workDir> -o <outputDir> -r <launchDir> -a <archiveDir> -c -t -q SUPPLEMENTARY=NAME]
 
 -h     Display help.
 
@@ -19,6 +19,8 @@ Usage: $(basename $SCRIPT) -s <system> -p <parameters> -i <inputs> -x <branch> [
 -x     Specify workflow branches to execute
 
 -w     Specify work directory
+
+-o     Specify output directory
 
 -r     Specify previous launch directory to resume
 
@@ -64,7 +66,7 @@ BRANCHES="none"
 INPUTS='none'
 ARCHIVE="$REPO_DIR/archive"
 
-while getopts ':hs:p:i:x:w:a:r:ct' OPT; do
+while getopts ':hs:p:i:x:w:o:a:r:ct' OPT; do
 
     case "$OPT" in
 
@@ -79,6 +81,8 @@ while getopts ':hs:p:i:x:w:a:r:ct' OPT; do
         x) BRANCHES="$OPTARG" ;;
 
         w) WORK_DIR="$OPTARG" ;;
+
+        o) OUT_DIR="$OPTARG" ;;
 
         a) ARCHIVE="$OPTARG" ;;
 
@@ -225,6 +229,14 @@ if [ $WORK_DIR ]; then
 fi
 
 
+# OUTPUT DIRECTORY
+if [ $OUT_DIR ]; then
+
+    OUTPUT="-output-dir $OUT_DIR"
+
+fi
+
+
 # CHECK PREVIOUS LAUNCH
 
 # specify launch directory
@@ -286,6 +298,7 @@ IFS='' read -r -d '' LAUNCH_COMMAND << EOF
         -C $CONFIG \\
         run $WORKFLOW \\
         $WORK \\
+        $OUTPUT \\
         $RESUME \\
         $STUB \\
         $PREVIEW \\
