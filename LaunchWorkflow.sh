@@ -322,6 +322,14 @@ echo -e "\n>>> LaunchDir: $(basename $(pwd))\n"
 exec "$LAUNCH_COMMAND"
 
 
+
+
+if [[ "$SYSTEM" =~ ^(awsbatch|cloud_other) ]]; then
+
+    aws s3 cp ./logs $BUCKET_DIR/MOVED --recursive
+
+fi
+
 # PLOT DAG
 
 DOT=$(which dot) # check graphviz installed
