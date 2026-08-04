@@ -326,6 +326,8 @@ exec "$LAUNCH_COMMAND"
 
 if [[ "$SYSTEM" =~ ^(awsbatch|cloud_other) ]]; then
 
+    echo -e "\nCopying local logs to s3 bucket \"$BUCKET_DIR\"\n"
+
     aws s3 cp ./logs $BUCKET_DIR/logs --recursive
 
 fi
