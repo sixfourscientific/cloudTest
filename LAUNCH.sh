@@ -6,6 +6,5 @@ $REPO_DIR/LaunchWorkflow.sh \
 	-s awsbatch \
 	-p defaults \
 	-x data \
-	-w s3://core-547154048962-eu-west-2/nextflow-work-TEST \
-	-o s3://core-547154048962-eu-west-2/nextflow-outputs-TEST \
+    -b s3://core-547154048962-eu-west-2/nextflow-TEST \
 	-i $REPO_DIR/pipeline/inputs/test/SampleInfoTestLocal.tsv $@

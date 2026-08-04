@@ -66,7 +66,7 @@ BRANCHES="none"
 INPUTS='none'
 ARCHIVE="$REPO_DIR/archive"
 
-while getopts ':hs:p:i:x:w:o:a:r:ct' OPT; do
+while getopts ':hs:p:i:x:b:a:r:ct' OPT; do
 
     case "$OPT" in
 
@@ -80,9 +80,7 @@ while getopts ':hs:p:i:x:w:o:a:r:ct' OPT; do
 
         x) BRANCHES="$OPTARG" ;;
 
-        w) WORK_DIR="$OPTARG" ;;
-
-        o) OUT_DIR="$OPTARG" ;;
+        b) BUCKET_DIR="$OPTARG" ;;
 
         a) ARCHIVE="$OPTARG" ;;
 
@@ -221,21 +219,6 @@ if [ $TEST ]; then
 
 fi
 
-# WORK DIRECTORY
-if [ $WORK_DIR ]; then
-
-    WORK="-work-dir $WORK_DIR"
-
-fi
-
-
-# OUTPUT DIRECTORY
-if [ $OUT_DIR ]; then
-
-    OUTPUT="-output-dir $OUT_DIR"
-
-fi
-
 
 # CHECK PREVIOUS LAUNCH
 
@@ -285,6 +268,19 @@ else
 
 fi # mode; NEW|RESUME
 
+
+# WORK DIRECTORY
+if [ $BUCKET_DIR ]; then
+
+    BUCKET_DIR=$BUCKET_DIR/$(basename $ARCHIVE)/$(basename $NF_LAUNCH_SUBDIR)
+    
+    WORK_DIR="$BUCKET_DIR/work"
+    OUTPUT_DIR="$BUCKET_DIR/outputs"
+
+    WORK="-work-dir $WORK_DIR"
+    OUTPUT="-output-dir $OUTPUT_DIR"
+
+fi
 
 
 # PREPARE LAUNCH
