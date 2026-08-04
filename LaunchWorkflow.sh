@@ -326,7 +326,7 @@ exec "$LAUNCH_COMMAND"
 
 if [[ "$SYSTEM" =~ ^(awsbatch|cloud_other) ]]; then
 
-    aws s3 cp ./logs $BUCKET_DIR/MOVED --recursive
+    aws s3 cp ./logs $BUCKET_DIR/logs --recursive
 
 fi
 
