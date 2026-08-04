@@ -267,11 +267,11 @@ else
         echo "-- $NF_LAUNCH_DIR_OLD"
         showHelp "Error ~ launchDir format unexpected: Check prefix matches \"$(basename $NF_LAUNCH_DIR_NEW)\"; $NF_LAUNCH_DIR_OLD"
 
-    elif [[ ! "$SYSTEM" =~ ^(aws-ec2|cloud_other)$ && ! -d "$NF_LAUNCH_DIR_OLD/work" && -z "$WORK_DIR" ]]; then
+    elif [[ ! "$SYSTEM" =~ ^(awsbatch|cloud_other)$ && ! -d "$NF_LAUNCH_DIR_OLD/work" && -z "$WORK_DIR" ]]; then
 
         showHelp "Error ~ launchDir work subdirectory not found; $NF_LAUNCH_DIR_OLD"
 
-    elif [[ ! "$SYSTEM" =~ ^(aws-ec2|cloud_other)$ && ! -d "$NF_LAUNCH_DIR_OLD/work" && ! -d "$WORK_DIR" ]]; then
+    elif [[ ! "$SYSTEM" =~ ^(awsbatch|cloud_other)$ && ! -d "$NF_LAUNCH_DIR_OLD/work" && ! -d "$WORK_DIR" ]]; then
 
         showHelp "Error ~ workDir not found; $WORK_DIR"
 

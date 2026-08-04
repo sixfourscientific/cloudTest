@@ -3,9 +3,9 @@
 REPO_DIR=$(dirname $(realpath "$0"))
 
 $REPO_DIR/LaunchWorkflow.sh \
-	-s aws-ec2 \
+	-s awsbatch \
 	-p defaults \
 	-x data \
 	-w s3://core-547154048962-eu-west-2/nextflow-work-TEST \
-        -o s3://core-547154048962-eu-west-2/nextflow-outputs-TEST \
+	-o s3://core-547154048962-eu-west-2/nextflow-outputs-TEST \
 	-i $REPO_DIR/pipeline/inputs/test/SampleInfoTestLocal.tsv $@
