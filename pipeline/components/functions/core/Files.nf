@@ -126,11 +126,11 @@ def switchClass( value ){
 def logInfo ( info ){
     
     // make log direectory
-    def validatedDir = "${params.logDir}/info"
+    def validatedDir = "$params.runDir/$params.logDir/info"
     new File(validatedDir).mkdirs()
 
     // log info file contents
-    def validatedFile = new File("${validatedDir}/${info.getName()}")
+    def validatedFile = new File("$validatedDir/${info.getName()}")
     validatedFile << info.text }
 
 
