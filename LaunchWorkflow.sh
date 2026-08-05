@@ -97,6 +97,15 @@ while getopts ':hs:p:i:x:b:a:r:ct' OPT; do
 done; shift "$(($OPTIND -1))"
 
 
+# CLOUD SYSTEMS
+
+if [[ "$SYSTEM" =~ ^(awsbatch|cloud_other)$ ]]; then
+    CLOUD=true
+fi
+if [[ "$SYSTEM" == awsbatch ]]; then
+    AWSBATCH=true
+fi
+
 # RESUME PARAMETERS
 
 if [ -z "$DIR2RESUME" ]; then
@@ -240,7 +249,7 @@ if [ -z $DIR2RESUME ]; then
 
 else
 
-    if [ ! -d $NF_LAUNCH_DIR_OLD ]; then # previous launch directory not found
+    if [ -z $AWSBATCH && ! -d $NF_LAUNCH_DIR_OLD ]; then # previous launch directory not found
 
         showHelp "Error ~ launchDir not found: Check archive for available options; $ARCHIVE"
             
@@ -250,16 +259,16 @@ else
         echo "-- $NF_LAUNCH_DIR_OLD"
         showHelp "Error ~ launchDir format unexpected: Check prefix matches \"$(basename $NF_LAUNCH_DIR_NEW)\"; $NF_LAUNCH_DIR_OLD"
 
-    elif [[ ! "$SYSTEM" =~ ^(awsbatch|cloud_other)$ && ! -d "$NF_LAUNCH_DIR_OLD/work" && -z "$WORK_DIR" ]]; then
+    elif [[ -z "$AWSBATCH" && ! -d "$NF_LAUNCH_DIR_OLD/work" && -z "$WORK_DIR" ]]; then
 
         showHelp "Error ~ launchDir work subdirectory not found; $NF_LAUNCH_DIR_OLD"
 
-    elif [[ ! "$SYSTEM" =~ ^(awsbatch|cloud_other)$ && ! -d "$NF_LAUNCH_DIR_OLD/work" && ! -d "$WORK_DIR" ]]; then
+    elif [[ -z "$AWSBATCH" && ! -d "$NF_LAUNCH_DIR_OLD/work" && ! -d "$WORK_DIR" ]]; then
 
         showHelp "Error ~ workDir not found; $WORK_DIR"
 
     else
-    
+
         NF_LAUNCH_SUBDIR=$NF_LAUNCH_DIR_OLD # specify relevant launch directory
     
         RESUME="-resume"
@@ -314,7 +323,7 @@ exec "cd $NF_LAUNCH_SUBDIR"
 
 # COPY CACHE
 
-if [[  -n "$RESUME" && "$SYSTEM" =~ ^(awsbatch|cloud_other) ]]; then
+if [[ -n "$AWSBATCH" && -n "$RESUME" ]]; then
 
     echo -e "\nCopying nextflow cache from s3 bucket \"$BUCKET_DIR\""
 
@@ -337,7 +346,7 @@ exec "$LAUNCH_COMMAND"
 
 # STORE LOGS & CACHE
 
-if [[ "$SYSTEM" =~ ^(awsbatch|cloud_other) ]]; then
+if [[ -n "$AWSBATCH" ]]; then
 
     echo -e "\nCopying local logs to s3 bucket \"$BUCKET_DIR\""
 
