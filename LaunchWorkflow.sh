@@ -309,12 +309,25 @@ LAUNCH_COMMAND=$(grep -v '^\s*\\' <<< "$LAUNCH_COMMAND")
 
 echo -e "\nEXECUTING:\n\n$LAUNCH_COMMAND\n"
 
+# move to launch directory
+exec "cd $NF_LAUNCH_SUBDIR"
+
+# COPY CACHE
+
+if [[  -n "$RESUME" && "$SYSTEM" =~ ^(awsbatch|cloud_other) ]]; then
+
+    echo -e "\nCopying nextflow cache from s3 bucket \"$BUCKET_DIR\""
+
+    # nextflow cache
+    aws s3 cp $BUCKET_DIR ./ --recursive  --exclude "*" --include ".nextflow*" --only-show-errors
+
+    echo "Done."
+
+fi
+
 
 
 # LAUNCH
-
-# move to launch directory
-exec "cd $NF_LAUNCH_SUBDIR"
 
 echo -e "\n>>> LaunchDir: $(basename $(pwd))\n"
 
@@ -322,13 +335,19 @@ echo -e "\n>>> LaunchDir: $(basename $(pwd))\n"
 exec "$LAUNCH_COMMAND"
 
 
-
+# STORE LOGS & CACHE
 
 if [[ "$SYSTEM" =~ ^(awsbatch|cloud_other) ]]; then
 
-    echo -e "\nCopying local logs to s3 bucket \"$BUCKET_DIR\"\n"
+    echo -e "\nCopying local logs to s3 bucket \"$BUCKET_DIR\""
 
-    aws s3 cp ./logs $BUCKET_DIR/logs --recursive
+    # tracing logs
+    aws s3 cp ./logs $BUCKET_DIR/logs --recursive --only-show-errors
+
+    # nextflow cache
+    aws s3 cp . $BUCKET_DIR --recursive --exclude "*" --include ".nextflow*" --only-show-errors
+
+    echo "Done."
 
 fi
 
