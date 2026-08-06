@@ -63,7 +63,7 @@ process MODULE {
     // MAIN
 
     script:
-
+        println("|>|> $task.cpus")
         """
 
         mkdir -p subDir
