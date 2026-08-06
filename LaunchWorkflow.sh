@@ -241,15 +241,17 @@ NF_LAUNCH_DIR_NEW="$ARCHIVE/$DIR2START"
 NF_LAUNCH_DIR_OLD="$ARCHIVE/$DIR2RESUME"
 
 
+# new launchDir
 if [ -z $DIR2RESUME ]; then
 
     DATE_TIME=$(date '+%Y.%m.%d_%H.%M.%S') # get current datetime
     
     NF_LAUNCH_SUBDIR="${NF_LAUNCH_DIR_NEW}_${DATE_TIME}${DRYRUN}" # label launch directory
 
+# resume launchDir
 else
 
-    if [ -z $AWSBATCH && ! -d $NF_LAUNCH_DIR_OLD ]; then # previous launch directory not found
+    if [[ -z $CLOUD && ! -d $NF_LAUNCH_DIR_OLD ]]; then # previous launch directory not found
 
         showHelp "Error ~ launchDir not found: Check archive for available options; $ARCHIVE"
             
@@ -258,14 +260,6 @@ else
         echo "- $NF_LAUNCH_DIR_NEW"
         echo "-- $NF_LAUNCH_DIR_OLD"
         showHelp "Error ~ launchDir format unexpected: Check prefix matches \"$(basename $NF_LAUNCH_DIR_NEW)\"; $NF_LAUNCH_DIR_OLD"
-
-    elif [[ -z "$AWSBATCH" && ! -d "$NF_LAUNCH_DIR_OLD/work" && -z "$WORK_DIR" ]]; then
-
-        showHelp "Error ~ launchDir work subdirectory not found; $NF_LAUNCH_DIR_OLD"
-
-    elif [[ -z "$AWSBATCH" && ! -d "$NF_LAUNCH_DIR_OLD/work" && ! -d "$WORK_DIR" ]]; then
-
-        showHelp "Error ~ workDir not found; $WORK_DIR"
 
     else
 
@@ -278,18 +272,45 @@ else
 fi # mode; NEW|RESUME
 
 
-# WORK DIRECTORY
-if [ $BUCKET_DIR ]; then
+# WORK & OUTPUT DIRECTORY
+if [[ -n "$CLOUD" ]]; then
 
-    BUCKET_DIR=$BUCKET_DIR/$(basename $ARCHIVE)/$(basename $NF_LAUNCH_SUBDIR)
+    # bucket not provided
+    if [[ -z "$BUCKET_DIR" ]]; then
+
+        showHelp "Error ~ bucketDir not provided: Check account for available options"
+
+    fi
+
+    BUCKET_DIR="$BUCKET_DIR/$(basename $ARCHIVE)/$(basename $NF_LAUNCH_SUBDIR)"
     
+    # create work & output directories
     WORK_DIR="$BUCKET_DIR/work"
     OUTPUT_DIR="$BUCKET_DIR/outputs"
 
+    # create work & output arguments
     WORK="-work-dir $WORK_DIR"
     OUTPUT="-output-dir $OUTPUT_DIR"
 
+    # extract bucker uri components
+    SCHEME="s3://"
+    OBJECT_PATH="${BUCKET_DIR#$SCHEME}"
+    BUCKET_NAME="${OBJECT_PATH%%/*}"
+    OBJECT_KEY="${OBJECT_PATH#*/}"
+
+    # bucket not found
+    if [[ -n "$AWSBATCH" ]]; then
+
+        if ! aws s3api head-object --bucket $BUCKET_NAME --key $OBJECT_KEY/.nextflow.log >/dev/null; then
+
+            showHelp "Error ~ launchDir not found: Check archive for available options; $(dirname $BUCKET_DIR)"
+
+        fi
+
+    fi
+
 fi
+
 
 
 # PREPARE LAUNCH
