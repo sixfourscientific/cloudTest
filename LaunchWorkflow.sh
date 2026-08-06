@@ -299,11 +299,11 @@ if [[ -n "$CLOUD" ]]; then
     OBJECT_KEY="${OBJECT_PATH#*/}"
 
     # bucket not found
-    if [[ -n "$AWSBATCH" ]]; then
+    if [[ -n "$AWSBATCH" && -n "$DIR2RESUME" ]]; then
 
         if ! aws s3api head-object --bucket $BUCKET_NAME --key $OBJECT_KEY/.nextflow.log >/dev/null; then
 
-            showHelp "Error ~ launchDir not found: Check archive for available options; $(dirname $BUCKET_DIR)"
+            showHelp "Error ~ launchDir not found: Check bucket for available options; $(dirname $BUCKET_DIR)"
 
         fi
 
