@@ -283,16 +283,19 @@ if [[ -n "$CLOUD" ]]; then
     fi
 
     BUCKET_DIR="$BUCKET_DIR/$(basename $ARCHIVE)/$(basename $NF_LAUNCH_SUBDIR)"
-    
-    export NXF_CLOUDCACHE_PATH="$BUCKET_DIR/cache"
 
     # create work & output directories
     WORK_DIR="$BUCKET_DIR/work"
     OUTPUT_DIR="$BUCKET_DIR/outputs"
+    CACHE_DIR="$BUCKET_DIR/cache"
 
     # create work & output arguments
     WORK="-work-dir $WORK_DIR"
     OUTPUT="-output-dir $OUTPUT_DIR"
+
+    # N.B. run name and uuid required for this appraoch
+  # export NXF_CLOUDCACHE_PATH="$CACHE_DIR"
+  # export NXF_IGNORE_RESUME_HISTORY=true
 
     # extract bucker uri components
     SCHEME="s3://"
@@ -303,8 +306,10 @@ if [[ -n "$CLOUD" ]]; then
     # bucket not found
     if [[ -n "$AWSBATCH" && -n "$DIR2RESUME" ]]; then
 
-      # if ! aws s3api head-object --bucket $BUCKET_NAME --key $OBJECT_KEY/.nextflow.log >/dev/null; then
-        if [[ $(aws s3api list-objects-v2 --bucket $BUCKET_NAME --prefix $OBJECT_KEY/ --max-items 1 --query "Contents" --output text) == "None" ]]; then
+        if ! aws s3api head-object --bucket $BUCKET_NAME --key $OBJECT_KEY/.nextflow.log >/dev/null; then
+      
+      # for NXF_CLOUDCACHE_PATH approach 
+      # if [[ $(aws s3api list-objects-v2 --bucket $BUCKET_NAME --prefix $OBJECT_KEY/ --max-items 1 --query "Contents" --output text) == "None" ]]; then
 
             showHelp "Error ~ launchDir not found: Check bucket for available options; $(dirname $BUCKET_DIR)"
 
@@ -346,8 +351,8 @@ echo -e "\nEXECUTING:\n\n$LAUNCH_COMMAND\n"
 exec "cd $NF_LAUNCH_SUBDIR"
 
 # COPY CACHE
-SKIP=true
-if [[ -z "$SKIP" && -n "$AWSBATCH" && -n "$RESUME" ]]; then
+
+if [[ -n "$AWSBATCH" && -n "$RESUME" ]]; then
 
     echo -e "\nCopying nextflow cache from s3 bucket \"$BUCKET_DIR\""
 
@@ -370,7 +375,7 @@ exec "$LAUNCH_COMMAND"
 
 # STORE LOGS & CACHE
 
-if [[ -z "$SKIP" && -n "$AWSBATCH" ]]; then
+if [[ -n "$AWSBATCH" ]]; then
 
     echo -e "\nCopying local logs to s3 bucket \"$BUCKET_DIR\""
 
