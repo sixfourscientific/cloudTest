@@ -343,8 +343,8 @@ echo -e "\nEXECUTING:\n\n$LAUNCH_COMMAND\n"
 exec "cd $NF_LAUNCH_SUBDIR"
 
 # COPY CACHE
-
-if [[ -n "$AWSBATCH" && -n "$RESUME" ]]; then
+SKIP=true
+if [[ -n "$SKIP" && -n "$AWSBATCH" && -n "$RESUME" ]]; then
 
     echo -e "\nCopying nextflow cache from s3 bucket \"$BUCKET_DIR\""
 
