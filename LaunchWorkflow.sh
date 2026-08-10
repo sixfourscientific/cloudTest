@@ -284,6 +284,8 @@ if [[ -n "$CLOUD" ]]; then
 
     BUCKET_DIR="$BUCKET_DIR/$(basename $ARCHIVE)/$(basename $NF_LAUNCH_SUBDIR)"
     
+    export NXF_CLOUDCACHE_PATH="$BUCKET_DIR/cache"
+
     # create work & output directories
     WORK_DIR="$BUCKET_DIR/work"
     OUTPUT_DIR="$BUCKET_DIR/outputs"
@@ -367,7 +369,7 @@ exec "$LAUNCH_COMMAND"
 
 # STORE LOGS & CACHE
 
-if [[ -n "$AWSBATCH" ]]; then
+if [[ -z "$SKIP" && -n "$AWSBATCH" ]]; then
 
     echo -e "\nCopying local logs to s3 bucket \"$BUCKET_DIR\""
 
