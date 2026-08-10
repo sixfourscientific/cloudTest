@@ -303,7 +303,8 @@ if [[ -n "$CLOUD" ]]; then
     # bucket not found
     if [[ -n "$AWSBATCH" && -n "$DIR2RESUME" ]]; then
 
-        if ! aws s3api head-object --bucket $BUCKET_NAME --key $OBJECT_KEY/.nextflow.log >/dev/null; then
+      # if ! aws s3api head-object --bucket $BUCKET_NAME --key $OBJECT_KEY/.nextflow.log >/dev/null; then
+        if [[ $(aws s3api list-objects-v2 --bucket $BUCKET_NAME --key $OBJECT_KEY/ --max-items 1 --query "Contents" --output text) != "None" ]]; then
 
             showHelp "Error ~ launchDir not found: Check bucket for available options; $(dirname $BUCKET_DIR)"
 
