@@ -317,8 +317,12 @@ def parseInfo( args ){
                         assert file(value).exists():
                             "Row ${idxRow}: Path not found; ${value}"
 
-                        // conform as absolute path
-                        value = new File(value).absolutePath
+                        if value.startsWith('.') {
+                            
+                            // conform as absolute path
+                            value = new File(value).absolutePath
+                            
+                            }
 
                         }
                     
