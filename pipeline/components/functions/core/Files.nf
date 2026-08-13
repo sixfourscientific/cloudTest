@@ -314,7 +314,7 @@ def parseInfo( args ){
                     // CHECK PATH EXISTS
                     if ( infoMap.EXISTS.contains(key) ){
 
-                        assert new File( value ).exists():
+                        assert file(value).exists():
                             "Row ${idxRow}: Path not found; ${value}"
 
                         // conform as absolute path
