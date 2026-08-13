@@ -317,6 +317,7 @@ def parseInfo( args ){
                         assert file(value).exists():
                             "Row ${idxRow}: Path not found; ${value}"
 
+                        // only conform non-bucket paths; won't handle relative paths not starting ./|../
                         if ( value.startsWith('.') ) {
                             
                             // conform as absolute path
