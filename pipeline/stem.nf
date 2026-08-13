@@ -85,6 +85,7 @@ workflow {
             INFO     : params.inputs,
             TYPE     : "SAMPLES",
             DETAILED : true,
+            EXISTS : ['path'],
             ]
 
         Inputs = ParseInfo( InputMeta ) 

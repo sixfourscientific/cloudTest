@@ -317,6 +317,9 @@ def parseInfo( args ){
                         assert new File( value ).exists():
                             "Row ${idxRow}: Path not found; ${value}"
 
+                        // conform as absolute path
+                        value = new File(value).absolutePath
+
                         }
                     
 
