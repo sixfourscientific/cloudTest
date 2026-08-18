@@ -2,7 +2,7 @@
 include { 
     formatArguments as formatArguments;
     makeTag as makeTag;
-    } from "$params.importMap.functions/core/Utils"
+    } from "../../../../functions/core/Utils"
 
 process MODULE {
 

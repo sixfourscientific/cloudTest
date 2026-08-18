@@ -5,15 +5,15 @@
 
 include { 
     viewMeta as viewMeta;
-    } from "$params.importMap.functions/core/Utils"
+    } from "../../functions/core/Utils"
 
 include { 
     Config_Parse as ParseConfig;
-    } from "${params.importMap.subworkflows}/core/Config_Parse"
+    } from "../core/Config_Parse"
 
 include {
     STAGING as Command1Software1;
-    } from "${params.importMap.subworkflows}/leaves/software1/command1/STAGING_Software1_Command1.nf"
+    } from "../leaves/software1/command1/STAGING_Software1_Command1.nf"
 
 ////LEAF_IMPORT////
 
@@ -45,6 +45,6 @@ workflow SUBWORKFLOW {
 
     emit :
 
-        Main = Processed
+        Processed
 
     }

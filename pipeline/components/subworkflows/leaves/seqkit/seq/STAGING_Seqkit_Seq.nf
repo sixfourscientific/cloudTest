@@ -6,11 +6,11 @@
 include { 
     preStage  as preStage;
     postStage as postStage;
-    } from "$params.importMap.functions/core/Utils"
+    } from "../../../../functions/core/Utils"
 
 include { 
     MODULE as Run;
-    } from "${params.importMap.subworkflows}/leaves/seqkit/seq/MODULE_Seqkit_Seq.nf"
+    } from "./MODULE_Seqkit_Seq.nf"
 
 workflow STAGING {
 
@@ -63,7 +63,6 @@ workflow STAGING {
          // POST-STAGE
 
                 | map { coreMeta, output ->
-                    
 
                     def updateList = [
                         [['SEQKIT', 'SEQ', coreMeta.STAGING.BRANCH, 'main'],  output],
@@ -84,6 +83,6 @@ workflow STAGING {
 
     emit:
 
-        Main = Processed
+        Processed
 
     }

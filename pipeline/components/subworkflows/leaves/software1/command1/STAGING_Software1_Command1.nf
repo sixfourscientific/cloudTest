@@ -6,11 +6,11 @@
 include { 
     preStage  as preStage;
     postStage as postStage;
-    } from "$params.importMap.functions/core/Utils"
+    } from "../../../../functions/core/Utils"
 
 include { 
     MODULE as Run;
-    } from "${params.importMap.subworkflows}/leaves/software1/command1/MODULE_Software1_Command1.nf"
+    } from "./MODULE_Software1_Command1.nf"
 
 workflow STAGING {
 
@@ -46,7 +46,7 @@ workflow STAGING {
                 | map { coreMeta ->
 
                     def skipOptional = !coreMeta.optional || !coreMeta.STAGING.ARGS.containsKey('--optional')
-                    
+
                     def optionalFile  = file( !skipOptional ? coreMeta.optional : coreMeta.dummy )
 
                     return [
@@ -63,7 +63,6 @@ workflow STAGING {
          // POST-STAGE
 
                 | map { coreMeta, output ->
-                    
 
                     def updateList = [
                         [['SOFTWARE1', 'COMMAND1', coreMeta.STAGING.BRANCH, 'main'],  output],
@@ -84,6 +83,6 @@ workflow STAGING {
 
     emit:
 
-        Main = Processed
+        Processed
 
     }
