@@ -4,92 +4,78 @@
 nextflow.enable.dsl = 2
 
 
-
-
-// IMPORTS
-
-import java.nio.file.Files
-
 // FUNCTIONS
 
 params.PUBLISH = true
-
-params.importMap = [ 'subworkflows', 'functions' ]
-
-        .collectEntries { subDir -> 
-
-                def subPath = [ workflow.projectDir, 'components', subDir, ]
-                
-                        .join('/')
-                
-                return [ (subDir) : subPath ] }
-
 
 include { 
     parseSupplementary as parseSupplementary;
     viewMeta as viewMeta;
     prepBridge as prepBridge;
-    } from "$params.importMap.functions/core/Utils"
+    } from "./components/functions/core/Utils"
 
 // SUBWORKFLOWS
 
 include { 
     Info_Parse as ParseInfo;
-    } from "${params.importMap.subworkflows}/core/Info_Parse"
+    } from "./components/subworkflows/core/Info_Parse"
 
 include { 
     Dummy_Add as AddDummy;
-    } from "${params.importMap.subworkflows}/core/Dummy_Add"
+    } from "./components/subworkflows/core/Dummy_Add"
 
 include {
     SUBWORKFLOW as Data;
-    } from "${params.importMap.subworkflows}/branches/BRANCH_Data"
+    } from "./components/subworkflows/branches/BRANCH_Data"
 
 include {
     SUBWORKFLOW as Paths;
-    } from "${params.importMap.subworkflows}/branches/BRANCH_Paths"
+    } from "./components/subworkflows/branches/BRANCH_Paths"
 
 include {
     SUBWORKFLOW as Modify;
-    } from "${params.importMap.subworkflows}/branches/BRANCH_Modify"
+    } from "./components/subworkflows/branches/BRANCH_Modify"
 
 ////BRANCH_IMPORT////
-
-
-// SETUP
-
-parseSupplementary( params.supplementary, params )
-
-Parameters = params
-
-EXECUTE  = params.execute.split(',')
-
-RUN_ALL  = EXECUTE.contains('all')
-
-RUN_DATA = RUN_ALL ?: EXECUTE.contains('data')
-
-RUN_PATHS = RUN_ALL ?: EXECUTE.contains('paths')
-
-////BRANCH_FILTER////
 
 
 workflow { 
 
     main:
 
-        println('PARSING INPUTS...')
+
+        // SETUP
+
+        parseSupplementary( params.supplementary, params )
+
+        Parameters = params
+
+        EXECUTE  = params.execute.split(',')
+
+        RUN_ALL  = EXECUTE.contains('all')
+
+        RUN_FEATURE = RUN_ALL ?: EXECUTE.contains('feature')
+
+        RUN_DATA = RUN_ALL ?: EXECUTE.contains('data')
+
+        RUN_PATHS = RUN_ALL ?: EXECUTE.contains('paths')
+
+        ////BRANCH_FILTER////
+
 
         // MAIN
+
+        println('PARSING INPUTS...')
 
         def InputMeta = params.INPUT.MAIN + [
             INFO     : params.inputs,
             TYPE     : "SAMPLES",
             DETAILED : true,
-            EXISTS : ['path'],
+            EXISTS   : ['path'],
             ]
 
-        Inputs = ParseInfo( InputMeta ) 
-        
+        Inputs = ParseInfo( InputMeta )
+
         Inputs = AddDummy(Inputs, [ dummy : 'optional.dummy' ])
 
         // SUPPLEMENTARY
@@ -107,12 +93,12 @@ workflow {
         println('RUNNING BRANCHES...')
         
         // BRANCH( Inputs|BRANCH.out.Main)
-        
+
         Data( Parameters, Inputs | filter { RUN_DATA }  )
 
         Paths( Parameters, Inputs | filter { RUN_PATHS }  )
 
-        Modify( Parameters, Paths.out.Main )
+        Modify( Parameters, Paths.out )
 
         ////BRANCH_RUN////
 
@@ -123,25 +109,9 @@ workflow {
 
     publish: 
     
-        Data = Data.out.Main.map{ coreMeta -> 
+        Data = Data.out.map{ coreMeta -> 
         
             def indexMeta = [:]
-            
-            def indexMetaNew = prepBridge( 
-                coreMeta  : coreMeta, 
-                indexMeta : indexMeta, 
-                BASIC     : false, 
-                UPDATE    : false, 
-                INTERIM   : false,
-                )
-            
-            return indexMetaNew }
-
-        Paths = Paths.out.Main.map{ coreMeta -> 
-        
-            def indexMeta = [
-                'head': coreMeta.OUTPUTS.SOFTWARE2.COMMAND2.PATHS.main,
-                ]
             
             def indexMetaNew = prepBridge( 
                 coreMeta  : coreMeta, 
@@ -153,7 +123,23 @@ workflow {
             
             return indexMetaNew }
 
-        Modify = Modify.out.Main.map{ coreMeta -> 
+        Paths = Paths.out.map{ coreMeta -> 
+        
+            def indexMeta = [
+                'head': coreMeta.OUTPUTS.SOFTWARE2.COMMAND2.PATHS.main,
+                ]            
+        
+            def indexMetaNew = prepBridge( 
+                coreMeta  : coreMeta, 
+                indexMeta : indexMeta, 
+                BASIC     : false, 
+                UPDATE    : false, 
+                INTERIM   : false,
+                )      
+            
+            return indexMetaNew }
+
+        Modify = Modify.out.map{ coreMeta -> 
         
             def indexMeta = [:]
             
