@@ -1,7 +1,9 @@
 
 include { 
+    getSubMap as getSubMap;
+    flattenMap as flattenMap;
     makeTag as makeTag;
-    } from "$params.importMap.functions/core/Utils"
+    } from "./Utils"
 
 
 def initDefaults( json ){
@@ -100,24 +102,22 @@ def getExt( args ){
     return [extList, fileRegex] }
 
 
-def switchClass( value ){
+def switchClass( value ){ // UPGRADE
 
-    switch (value) {
+        if ( value instanceof List )           {
 
-        case { value instanceof List }:                              break
+        } else if (value.isLong())             { value = value.toLong()
 
-        case { value.isLong() }:          value = value.toLong();    break
+        } else if ( value.isDouble() )         { value = value.toDouble()
 
-        case { value.isDouble() }:        value = value.toDouble();  break
+        } else if (value in ['true', 'false']) { value = value.toBoolean()
 
-        case ['true', 'false']:           value = value.toBoolean(); break
+        } else if (value in ['null'] )         { value = null
 
-        case ['null']:                    value = null;              break 
+        } else if ( value instanceof String )  {
 
-        case { value instanceof String }:                            break 
-
-        default: println ("Unhandled value class: \"$value\" (${value.getClass()})")
-
+        } else { error "Unhandled value class: \"$value\" (${value.getClass()})"
+        
         }
 
     return value }
@@ -211,7 +211,7 @@ def parseInfo( args ){
 
                 // check entry string unique
                 assert !( EntryInfo.contains(info) ):                
-                    "Row ${idxRow}: Entry not unique; Found on Row ${EntryInfo.findIndexOf{ it == info } + 1}"
+                    "Row ${idxRow}: Entry not unique; Found on Row ${EntryInfo.findIndexOf{ it -> it == info } + 1}"
 
                 // store unique entry string
                 EntryInfo.add(info)
@@ -274,7 +274,7 @@ def parseInfo( args ){
                         "Row ${idxRow}: ${key.capitalize()} not provided"
 
                     // convert any intermediary keys to original
-                    key = key.replaceAll(/\.$params.intTag$/, '')
+                    key = key.replaceAll( "\\.$params.intTag\$", '') // UPGRADE
 
                 // VALUE CHECKS 
 
@@ -285,7 +285,7 @@ def parseInfo( args ){
 
                         // check value not already processed                           
                         assert value.toString() !in UniqueStore[key]:
-                            "Row ${idxRow}: \"${key}\" not unique; processed on Row ${UniqueStore[key].findIndexOf{ it == value } + 1}" 
+                            "Row ${idxRow}: \"${key}\" not unique; processed on Row ${UniqueStore[key].findIndexOf{ it -> it == value } + 1}" 
                         }
 
                     // store processed value (as string)
@@ -475,11 +475,11 @@ def parseSubsets( args ){
     
         .withIndex()
         
-        .collect{ element, idx ->
-
+        .collect{ element, _idx ->
+            
             // calculate file sizes
             def fileBytes = batchMap.BYTELIMIT
-                ? java.nio.file.Files.size(entry).toLong()
+                ? 0 // java.nio.file.Files.size(entry).toLong() // FIX LATER; entry where? // UPGRADE
                 : 0
             
             def elementMeta = [
@@ -576,3 +576,82 @@ def parseSubsets( args ){
     def Subsets = subsetMetaList
 
     return Subsets }
+
+
+def writeSubset( args ){
+
+    def parsedMap = args.batch
+    def groupList = args.grouped
+
+    def fileName = parsedMap.FILE
+
+    def nestList = parsedMap.TARGETS
+
+    def fileText = groupList
+
+        .withIndex()
+
+        .collect{ elementMeta, idx ->
+
+            // extract submap as required
+            def relevantMeta = nestList
+                ? getSubMap(elementMeta, nestList)
+                : elementMeta
+
+            // flatten nested map structure
+            def flatMeta = flattenMap(relevantMeta)
+
+            def keys = flatMeta
+                .keySet()
+                .join('\t')
+
+            def values = flatMeta
+                .values()
+                .join('\t')
+
+            // return header (keys) as required
+            def lines = ( parsedMap.HEADER && idx.equals(0) )
+                ? "$keys\n$values"
+                : values
+
+            return lines }
+
+            .join('\n')
+
+    return [
+        fileName,
+        fileText,
+        ] }
+
+
+def groupSubset( args) {
+
+    def infoGroup = args.grouped
+
+    def ( metaList, nonMetaList ) = infoGroup.split{ obj -> obj instanceof Map }
+
+    assert metaList.size()    == 1: 
+        "Multiple meta objects regrouped"
+
+    assert nonMetaList.size() == 1: 
+        "Multiple batches regrouped"
+
+    def subsetMeta = metaList[0]
+
+    def filePath = nonMetaList[0]
+
+    def idNew = makeTag(
+        tags      : [ subsetMeta.BATCH.NAME, 'BATCH', subsetMeta.BATCH.INDEX ], 
+        delimiter : '-',
+        )
+
+    def batchMeta = subsetMeta.BATCH + [
+        FILE: filePath,
+        ]
+
+    def subsetMetaNew = subsetMeta + [
+        ID    : idNew,
+        BATCH : batchMeta,
+        ]
+
+    return subsetMetaNew }

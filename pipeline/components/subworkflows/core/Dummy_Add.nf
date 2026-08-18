@@ -13,7 +13,7 @@ workflow Dummy_Add {
 
         def entry = Additional.entrySet().first()
 
-        def Dummy = Channel.from('')
+        def Dummy = channel.from('')
             .collectFile(
                 name : entry.value,
                 )
@@ -35,6 +35,6 @@ workflow Dummy_Add {
 
     emit:
 
-        Main = Processed
+        Processed
 
     }
