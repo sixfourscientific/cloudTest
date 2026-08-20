@@ -67,7 +67,7 @@ workflow {
 
         println('PARSING INPUTS...')
 
-        def InputMeta = params.INPUT.MAIN + [
+        def InputMeta = (params.INPUT?.MAIN ?: [:]) + [
             INFO     : params.inputs,
             TYPE     : "SAMPLES",
             DETAILED : true,
