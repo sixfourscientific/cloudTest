@@ -99,11 +99,17 @@ done; shift "$(($OPTIND -1))"
 
 # CLOUD SYSTEMS
 
-if [[ "$SYSTEM" =~ ^(awsbatch|cloud_other)$ ]]; then
+if [[ "$SYSTEM" =~ ^(awsbatch|googlebatch|cloud_other)$ ]]; then
     CLOUD=true
-fi
-if [[ "$SYSTEM" == awsbatch ]]; then
-    AWSBATCH=true
+
+    if [[ "$SYSTEM" == awsbatch ]]; then
+        AWSBATCH=true
+        SCHEME="s3://"
+    elif [[ "$SYSTEM" == googlebatch ]]; then
+        GCPBATCH=true
+        SCHEME="gs://"
+    fi
+
 fi
 
 # RESUME PARAMETERS
@@ -298,7 +304,6 @@ if [[ -n "$CLOUD" ]]; then
   # export NXF_IGNORE_RESUME_HISTORY=true
 
     # extract bucker uri components
-    SCHEME="s3://"
     OBJECT_PATH="${BUCKET_DIR#$SCHEME}"
     BUCKET_NAME="${OBJECT_PATH%%/*}"
     OBJECT_KEY="${OBJECT_PATH#*/}"

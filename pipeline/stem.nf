@@ -175,7 +175,7 @@ output {
             }
 
         Paths { 
-            enabled      true
+            enabled      false
             mode         'copy'
             overwrite    'standard'
             ignoreErrors false
