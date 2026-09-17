@@ -387,6 +387,9 @@ if [[ -n "$AWSBATCH" ]]; then
     # tracing logs
     aws s3 cp ./logs $BUCKET_DIR/logs --recursive --only-show-errors
 
+    # tracing logs
+    aws s3 cp ./indexes $BUCKET_DIR/indexes --recursive --only-show-errors
+
     # nextflow cache
     aws s3 cp . $BUCKET_DIR --recursive --exclude "*" --include ".nextflow*" --only-show-errors
 

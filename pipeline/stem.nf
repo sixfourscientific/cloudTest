@@ -43,7 +43,6 @@ workflow {
 
     main:
 
-
         // SETUP
 
         parseSupplementary( params.supplementary, params )
@@ -111,7 +110,9 @@ workflow {
     
         Data = Data.out.map{ coreMeta -> 
         
-            def indexMeta = [:]
+            def indexMeta = [
+                'info':'test',
+                ]
             
             def indexMetaNew = prepBridge( 
                 coreMeta  : coreMeta, 
@@ -161,14 +162,14 @@ workflow {
 output {
 
         Data { 
-            enabled      false
+            enabled      true
             mode         'copy'
             overwrite    'standard'
             ignoreErrors false
             path { indexMeta -> 
                 return "data/$indexMeta.ID/$indexMeta.TAG" }
             index {
-                path   'bridge-data.csv'
+                path   "$workflow.launchDir/$params.indexDir/bridge-data.csv"
                 header true
                 sep    '\t'
                 }
@@ -182,7 +183,7 @@ output {
             path { indexMeta -> 
                 return "paths/$indexMeta.ID/$indexMeta.TAG" }
             index {
-                path   'bridge-paths.csv'
+                path   "$workflow.launchDir/$params.indexDir/bridge-paths.csv"
                 header true
                 sep    '\t'
                 }
@@ -196,7 +197,7 @@ output {
             path { indexMeta -> 
                 return "modify/$indexMeta.ID/$indexMeta.TAG" }
             index {
-                path   'bridge-modify.csv'
+                path   "$workflow.launchDir/$params.indexDir/bridge-modify.csv"
                 header true
                 sep    '\t'
                 }

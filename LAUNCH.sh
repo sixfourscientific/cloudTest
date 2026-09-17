@@ -2,11 +2,18 @@
 
 REPO_DIR=$(dirname $(realpath "$0"))
 
-#BUCKET="-b s3://core-547154048962-eu-west-2/nextflow"
-BUCKET="-b gs://core-sixfourscientific-europe-west2/nextflow"
+SYSTEM="awsbatch"
+
+if [[ "$SYSTEM" == awsbatch ]]; then
+	BUCKET="-b s3://core-547154048962-eu-west-2/nextflow"
+elif [[ "$SYSTEM" == googlebatch ]]; then
+	BUCKET="-b gs://core-sixfourscientific-europe-west2/nextflow"
+else
+	BUCKET=""
+fi
 
 $REPO_DIR/LaunchWorkflow.sh \
-	-s googlebatch \
+	-s $SYSTEM \
 	-p defaults \
 	-x data \
 	$BUCKET \
