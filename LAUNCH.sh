@@ -2,7 +2,7 @@
 
 REPO_DIR=$(dirname $(realpath "$0"))
 
-SYSTEM="awsbatch"
+SYSTEM="googlebatch"
 
 if [[ "$SYSTEM" == awsbatch ]]; then
 	BUCKET="-b s3://core-547154048962-eu-west-2/nextflow"
