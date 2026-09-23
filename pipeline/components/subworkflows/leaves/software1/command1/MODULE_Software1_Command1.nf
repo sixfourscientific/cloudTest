@@ -69,6 +69,7 @@ process MODULE {
         mkdir -p subDir
         echo 'DATA: $INPUT' > OUTPUT1.txt
         echo 'DATA: $INPUT' > subDir/OUTPUT2.txt
+        sleep 2
 
         """
 
